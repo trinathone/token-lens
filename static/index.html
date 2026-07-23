@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>token-lens</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .tagline {
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+        .input-section {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #58a6ff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            color: #c9d1d9;
+            font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+            font-size: 13px;
+            resize: vertical;
+            margin-bottom: 15px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #8b949e;
+            font-size: 13px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #c9d1d9;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: #c9d1d9;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2358a6ff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 16px;
+            padding-right: 32px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            background-color: #238636;
+            color: #fff;
+            border: 1px solid #2ea043;
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        button:hover {
+            background-color: #2ea043;
+            border-color: #3fb950;
+        }
+
+        button:active {
+            background-color: #238636;
+        }
+
+        button.secondary {
+            background-color: transparent;
+            color: #58a6ff;
+            border-color: #58a6ff;
+        }
+
+        button.secondary:hover {
+            background-color: rgba(88, 166, 255, 0.1);
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 20px;
+        }
+
+        .card-label {
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #3fb950;
+        }
+
+        .card-value.highlight {
+            color: #58a6ff;
+        }
+
+        .card-value.savings {
+            color: #3fb950;
+        }
+
+        .savings-badge {
+            display: inline-block;
+            background-color: rgba(63, 185, 80, 0.1);
+            color: #3fb950;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .breakdown {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .breakdown-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .breakdown-label {
+            color: #8b949e;
+        }
+
+        .breakdown-value {
+            color: #c9d1d9;
+            font-weight: 500;
+        }
+
+        .projection {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .projection-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 15px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #30363d;
+            align-items: center;
+        }
+
+        .projection-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .projection-label {
+            color: #8b949e;
+            font-size: 13px;
+        }
+
+        .projection-values {
+            display: flex;
+            gap: 15px;
+        }
+
+        .projection-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .projection-current {
+            color: #c9d1d9;
+            font-weight: 600;
+        }
+
+        .projection-best {
+            color: #3fb950;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        thead {
+            background-color: #0d1117;
+            border-bottom: 1px solid #30363d;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            font-size: 13px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(88, 166, 255, 0.1);
+        }
+
+        .model-name {
+            font-weight: 600;
+            color: #c9d1d9;
+        }
+
+        .provider {
+            color: #8b949e;
+            font-size: 12px;
+        }
+
+        .cost-cell {
+            text-align: right;
+            font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+        }
+
+        .cost-current {
+            color: #58a6ff;
+            font-weight: 600;
+        }
+
+        .cost-cheaper {
+            color: #3fb950;
+            font-weight: 600;
+        }
+
+        .cost-expensive {
+            color: #f85149;
+            font-weight: 600;
+        }
+
+        .percentage {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .percentage.savings {
+            color: #3fb950;
+        }
+
+        .percentage.neutral {
+            color: #8b949e;
+        }
+
+        .percentage.expensive {
+            color: #f85149;
+        }
+
+        .savings-calculator {
+            grid-column: 1 / -1;
+            background-color: #0d1117;
+            padding: 15px;
+            border-top: 1px solid #30363d;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .savings-calculator strong {
+            color: #3fb950;
+        }
+
+        .error {
+            background-color: rgba(248, 81, 73, 0.1);
+            border: 1px solid #f85149;
+            color: #f85149;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            color: #8b949e;
+            padding: 20px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .projection-row {
+                grid-template-columns: 1fr;
+            }
+
+            .projection-values {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 token-lens</h1>
+            <p class="tagline">see what your LLM calls actually cost</p>
+        </header>
+
+        <div class="input-section">
+            <div class="section-title">Paste API Response</div>
+            <textarea id="rawInput" placeholder='Paste raw JSON from OpenAI, Anthropic, or other API responses here. Example: {"usage": {"prompt_tokens": 1234, "completion_tokens": 567}}'></textarea>
+            <button onclick="parseAndFill()">Parse from JSON</button>
+
+            <div class="divider">— OR manually enter —</div>
+
+            <div class="form-row">
+                <div>
+                    <label for="promptTokens">Prompt tokens</label>
+                    <input type="number" id="promptTokens" placeholder="1234" min="0">
+                </div>
+                <div>
+                    <label for="completionTokens">Completion tokens</label>
+                    <input type="number" id="completionTokens" placeholder="567" min="0">
+                </div>
+            </div>
+
+            <div class="form-row full">
+                <div>
+                    <label for="modelSelect">Model</label>
+                    <select id="modelSelect"></select>
+                </div>
+            </div>
+
+            <div class="button-row">
+                <button onclick="analyzeCost()">Analyze Cost</button>
+                <button class="secondary" onclick="copyTokens()">Copy Tokens</button>
+            </div>
+
+            <div id="error" class="error"></div>
+        </div>
+
+        <div id="results" class="results-section">
+            <div id="loading" class="loading">Analyzing...</div>
+
+            <div class="summary-cards">
+                <div class="card">
+                    <div class="card-label">Current cost</div>
+                    <div class="card-value highlight" id="currentCost">$0.0000</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Cheapest alternative</div>
+                    <div class="card-value" id="cheapestModel">—</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Potential savings</div>
+                    <div class="card-value savings" id="savingsAmount">—</div>
+                </div>
+            </div>
+
+            <div class="breakdown">
+                <div style="font-weight: 600; margin-bottom: 12px;">Token breakdown</div>
+                <div class="breakdown-row">
+                    <span class="breakdown-label">Prompt tokens:</span>
+                    <span class="breakdown-value"><span id="promptDisplay">0</span> tokens × $<span id="promptPrice">0.000000</span>/1M = $<span id="promptCost">0.000000</span></span>
+                </div>
+                <div class="breakdown-row">
+                    <span class="breakdown-label">Completion tokens:</span>
+                    <span class="breakdown-value"><span id="completionDisplay">0</span> tokens × $<span id="completionPrice">0.000000</span>/1M = $<span id="completionCost">0.000000</span></span>
+                </div>
+            </div>
+
+            <div class="projection">
+                <div style="font-weight: 600; margin-bottom: 15px;">Monthly projection</div>
+                <div class="projection-row">
+                    <div class="projection-label">1,000 calls/month</div>
+                    <div class="projection-values">
+                        <div class="projection-item">
+                            <div class="projection-current" id="projection1k">$0.00</div>
+                            <div class="projection-best" id="projection1kBest">→ $0.00</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="projection-row">
+                    <div class="projection-label">10,000 calls/month</div>
+                    <div class="projection-values">
+                        <div class="projection-item">
+                            <div class="projection-current" id="projection10k">$0.00</div>
+                            <div class="projection-best" id="projection10kBest">→ $0.00</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="projection-row">
+                    <div class="projection-label">100,000 calls/month</div>
+                    <div class="projection-values">
+                        <div class="projection-item">
+                            <div class="projection-current" id="projection100k">$0.00</div>
+                            <div class="projection-best" id="projection100kBest">→ $0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-weight: 600; margin-bottom: 15px; font-size: 14px;">Model comparison</div>
+            <table id="comparisonTable">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Provider</th>
+                        <th style="text-align: right;">Input</th>
+                        <th style="text-align: right;">Output</th>
+                        <th style="text-align: right;">Total</th>
+                        <th style="text-align: right;">vs Current</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentAnalysis = null;
+        let currentModel = null;
+
+        async function loadModels() {
+            try {
+                const response = await fetch('/models');
+                const data = await response.json();
+                const select = document.getElementById('modelSelect');
+                select.innerHTML = '';
+                data.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = `${model.name} (${model.provider})`;
+                    select.appendChild(option);
+                });
+                if (data.models.length > 0) {
+                    select.value = 'gpt-4o';
+                }
+            } catch (error) {
+                showError('Failed to load models');
+            }
+        }
+
+        async function parseAndFill() {
+            const rawInput = document.getElementById('rawInput').value.trim();
+            if (!rawInput) {
+                showError('Please paste a JSON response');
+                return;
+            }
+
+            try {
+                const response = await fetch('/parse-response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ raw_json: rawInput })
+                });
+                const data = await response.json();
+                if (data.found) {
+                    document.getElementById('promptTokens').value = data.prompt_tokens;
+                    document.getElementById('completionTokens').value = data.completion_tokens;
+                    showError('');
+                } else {
+                    showError('No token data found in JSON');
+                }
+            } catch (error) {
+                showError('Failed to parse JSON');
+            }
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            if (message) {
+                errorEl.textContent = message;
+                errorEl.classList.add('active');
+            } else {
+                errorEl.classList.remove('active');
+            }
+        }
+
+        async function analyzeCost() {
+            const promptTokens = parseInt(document.getElementById('promptTokens').value) || 0;
+            const completionTokens = parseInt(document.getElementById('completionTokens').value) || 0;
+            const model = document.getElementById('modelSelect').value;
+
+            if (promptTokens === 0 && completionTokens === 0) {
+                showError('Please enter token counts');
+                return;
+            }
+
+            showError('');
+            document.getElementById('loading').classList.add('active');
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt_tokens: promptTokens,
+                        completion_tokens: completionTokens,
+                        model: model
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Analysis failed');
+                }
+
+                const data = await response.json();
+                currentAnalysis = data;
+                currentModel = model;
+                displayResults(data);
+                document.getElementById('results').classList.add('active');
+            } catch (error) {
+                showError('Failed to analyze costs');
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        function displayResults(data) {
+            const current = data.current_model;
+            const comparison = data.comparison;
+
+            document.getElementById('currentCost').textContent = `$${current.cost_usd.toFixed(4)}`;
+            document.getElementById('cheapestModel').textContent = data.comparison[0].name;
+            document.getElementById('savingsAmount').textContent = data.savings_vs_current;
+
+            const cheapest = comparison[0];
+            const promptPrice = data.input.prompt_tokens > 0 ? (current.prompt_cost_usd / data.input.prompt_tokens * 1_000_000) : 0;
+            const completionPrice = data.input.completion_tokens > 0 ? (current.completion_cost_usd / data.input.completion_tokens * 1_000_000) : 0;
+
+            document.getElementById('promptDisplay').textContent = data.input.prompt_tokens;
+            document.getElementById('promptPrice').textContent = promptPrice.toFixed(6);
+            document.getElementById('promptCost').textContent = current.prompt_cost_usd.toFixed(6);
+
+            document.getElementById('completionDisplay').textContent = data.input.completion_tokens;
+            document.getElementById('completionPrice').textContent = completionPrice.toFixed(6);
+            document.getElementById('completionCost').textContent = current.completion_cost_usd.toFixed(6);
+
+            document.getElementById('projection1k').textContent = `$${data.monthly_projection.calls_1000.toFixed(2)}`;
+            document.getElementById('projection10k').textContent = `$${data.monthly_projection.calls_10000.toFixed(2)}`;
+            document.getElementById('projection100k').textContent = `$${data.monthly_projection.calls_100000.toFixed(2)}`;
+
+            const cheapest1k = (cheapest.total_cost_usd * 1000).toFixed(2);
+            const cheapest10k = (cheapest.total_cost_usd * 10000).toFixed(2);
+            const cheapest100k = (cheapest.total_cost_usd * 100000).toFixed(2);
+
+            document.getElementById('projection1kBest').textContent = `→ $${cheapest1k}`;
+            document.getElementById('projection10kBest').textContent = `→ $${cheapest10k}`;
+            document.getElementById('projection100kBest').textContent = `→ $${cheapest100k}`;
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            comparison.forEach(model => {
+                const costClass = model.total_cost_usd === current.cost_usd ? 'cost-current' :
+                                  model.total_cost_usd < current.cost_usd ? 'cost-cheaper' : 'cost-expensive';
+                const percentageClass = model.cheaper_by_pct === 0 ? 'neutral' :
+                                       model.cheaper_by_pct > 0 ? 'savings' : 'expensive';
+
+                const tr = document.createElement('tr');
+                tr.onclick = () => showSavingsCalculator(model, data, current);
+                tr.innerHTML = `
+                    <td><span class="model-name">${model.name}</span><br><span class="provider">${model.provider}</span></td>
+                    <td>${model.provider}</td>
+                    <td class="cost-cell">$${model.prompt_cost_usd.toFixed(6)}</td>
+                    <td class="cost-cell">$${model.completion_cost_usd.toFixed(6)}</td>
+                    <td class="cost-cell ${costClass}">$${model.total_cost_usd.toFixed(6)}</td>
+                    <td class="percentage ${percentageClass}">${model.cheaper_by_pct > 0 ? '-' : '+'}${Math.abs(model.cheaper_by_pct)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showSavingsCalculator(model, analysis, current) {
+            const existing = document.querySelector('.savings-calculator');
+            if (existing) existing.remove();
+
+            const callCounts = [1000, 10000, 100000];
+            const savings = callCounts.map(count => {
+                const currentCost = current.cost_usd * count;
+                const altCost = model.total_cost_usd * count;
+                const savingsAmount = currentCost - altCost;
+                return { count, currentCost, altCost, savingsAmount };
+            });
+
+            const calc = document.createElement('tr');
+            calc.innerHTML = `
+                <td colspan="6" class="savings-calculator">
+                    <strong>Switching from ${current.name} to ${model.name}:</strong><br>
+                    • 1,000 calls/mo: <strong>$${savings[0].savingsAmount.toFixed(2)}/mo</strong> saved<br>
+                    • 10,000 calls/mo: <strong>$${savings[1].savingsAmount.toFixed(2)}/mo</strong> saved<br>
+                    • 100,000 calls/mo: <strong>$${savings[2].savingsAmount.toFixed(2)}/mo</strong> saved
+                </td>
+            `;
+            document.getElementById('tableBody').appendChild(calc);
+        }
+
+        function copyTokens() {
+            const promptTokens = document.getElementById('promptTokens').value;
+            const completionTokens = document.getElementById('completionTokens').value;
+            const text = `prompt: ${promptTokens}, completion: ${completionTokens}`;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const orig = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = orig, 2000);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadModels);
+    </script>
+</body>
+</html>
