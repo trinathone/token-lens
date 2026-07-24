@@ -8,16 +8,25 @@ from typing import Optional
 app = FastAPI()
 
 MODEL_PRICING = {
-    "gpt-4o":          {"name": "GPT-4o",               "provider": "OpenAI",     "input_per_1m": 5.00,   "output_per_1m": 15.00},
+    # OpenAI
+    "gpt-4o":          {"name": "GPT-4o",               "provider": "OpenAI",     "input_per_1m": 2.50,   "output_per_1m": 10.00},
     "gpt-4o-mini":     {"name": "GPT-4o Mini",          "provider": "OpenAI",     "input_per_1m": 0.15,   "output_per_1m": 0.60},
     "gpt-4-1":         {"name": "GPT-4.1",              "provider": "OpenAI",     "input_per_1m": 2.00,   "output_per_1m": 8.00},
     "gpt-4-mini":      {"name": "GPT-4.1 Mini",         "provider": "OpenAI",     "input_per_1m": 0.40,   "output_per_1m": 1.60},
+    "o4-mini":         {"name": "o4-mini",              "provider": "OpenAI",     "input_per_1m": 1.10,   "output_per_1m": 4.40},
+    "o3":              {"name": "o3",                   "provider": "OpenAI",     "input_per_1m": 10.00,  "output_per_1m": 40.00},
+    # Anthropic
+    "claude-opus-4":   {"name": "Claude Opus 4",        "provider": "Anthropic",  "input_per_1m": 15.00,  "output_per_1m": 75.00},
     "claude-sonnet-4": {"name": "Claude Sonnet 4",      "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00},
     "claude-haiku-3":  {"name": "Claude Haiku 3.5",     "provider": "Anthropic",  "input_per_1m": 0.80,   "output_per_1m": 4.00},
+    # Google
+    "gemini-2-5-flash":{"name": "Gemini 2.5 Flash",     "provider": "Google",     "input_per_1m": 0.15,   "output_per_1m": 0.60},
     "gemini-2-flash":  {"name": "Gemini 2.0 Flash",     "provider": "Google",     "input_per_1m": 0.075,  "output_per_1m": 0.30},
     "gemini-1-5-pro":  {"name": "Gemini 1.5 Pro",       "provider": "Google",     "input_per_1m": 1.25,   "output_per_1m": 5.00},
+    # DeepSeek
     "deepseek-v3":     {"name": "DeepSeek V3",          "provider": "DeepSeek",   "input_per_1m": 0.27,   "output_per_1m": 1.10},
     "deepseek-r1":     {"name": "DeepSeek R1",          "provider": "DeepSeek",   "input_per_1m": 0.55,   "output_per_1m": 2.19},
+    # Others
     "llama-3-3-70b":   {"name": "Llama 3.3 70B",        "provider": "Meta/OR",    "input_per_1m": 0.59,   "output_per_1m": 0.79},
     "mistral-large":   {"name": "Mistral Large 2",      "provider": "Mistral",    "input_per_1m": 2.00,   "output_per_1m": 6.00},
     "qwen3-235b":      {"name": "Qwen3 235B",           "provider": "Alibaba",    "input_per_1m": 0.50,   "output_per_1m": 1.50},
@@ -56,10 +65,14 @@ MODEL_NAME_MAP = {
     "gpt-4o": "gpt-4o",
     "gpt-4.1-mini": "gpt-4-mini",
     "gpt-4.1": "gpt-4-1",
+    "o4-mini": "o4-mini",
+    "o3": "o3",
+    "claude-opus-4": "claude-opus-4",
     "claude-3-5-haiku": "claude-haiku-3",
     "claude-haiku": "claude-haiku-3",
     "claude-sonnet-4": "claude-sonnet-4",
     "claude-sonnet": "claude-sonnet-4",
+    "gemini-2.5-flash": "gemini-2-5-flash",
     "gemini-2.0-flash": "gemini-2-flash",
     "gemini-1.5-pro": "gemini-1-5-pro",
     "deepseek-r1": "deepseek-r1",
