@@ -7,37 +7,43 @@ from typing import Optional, Any
 
 app = FastAPI()
 
+# cache_read_multiplier: fraction of input_per_1m charged for cached reads (None = no cache pricing)
+# cache_write_multiplier: fraction of input_per_1m charged for cache writes (None = same as regular input)
 MODEL_PRICING = {
     # OpenAI
-    "gpt-4o":          {"name": "GPT-4o",               "provider": "OpenAI",     "input_per_1m": 2.50,   "output_per_1m": 10.00},
-    "gpt-4o-mini":     {"name": "GPT-4o Mini",          "provider": "OpenAI",     "input_per_1m": 0.15,   "output_per_1m": 0.60},
-    "gpt-4-1":         {"name": "GPT-4.1",              "provider": "OpenAI",     "input_per_1m": 2.00,   "output_per_1m": 8.00},
-    "gpt-4-mini":      {"name": "GPT-4.1 Mini",         "provider": "OpenAI",     "input_per_1m": 0.40,   "output_per_1m": 1.60},
-    "o4-mini":         {"name": "o4-mini",              "provider": "OpenAI",     "input_per_1m": 1.10,   "output_per_1m": 4.40},
-    "o3":              {"name": "o3",                   "provider": "OpenAI",     "input_per_1m": 10.00,  "output_per_1m": 40.00},
-    # Anthropic
-    "claude-opus-4":   {"name": "Claude Opus 4",        "provider": "Anthropic",  "input_per_1m": 15.00,  "output_per_1m": 75.00},
-    "claude-sonnet-4": {"name": "Claude Sonnet 4",      "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00},
-    "claude-haiku-3":  {"name": "Claude Haiku 3.5",     "provider": "Anthropic",  "input_per_1m": 0.80,   "output_per_1m": 4.00},
-    # Google
-    "gemini-2-5-pro":  {"name": "Gemini 2.5 Pro",       "provider": "Google",     "input_per_1m": 1.25,   "output_per_1m": 10.00},
-    "gemini-2-5-flash":{"name": "Gemini 2.5 Flash",     "provider": "Google",     "input_per_1m": 0.15,   "output_per_1m": 0.60},
-    "gemini-2-flash":  {"name": "Gemini 2.0 Flash",     "provider": "Google",     "input_per_1m": 0.075,  "output_per_1m": 0.30},
-    "gemini-1-5-pro":  {"name": "Gemini 1.5 Pro",       "provider": "Google",     "input_per_1m": 1.25,   "output_per_1m": 5.00},
+    "gpt-4o":           {"name": "GPT-4o",               "provider": "OpenAI",     "input_per_1m": 2.50,   "output_per_1m": 10.00,  "cache_read_multiplier": 0.50,  "cache_write_multiplier": None},
+    "gpt-4o-mini":      {"name": "GPT-4o Mini",          "provider": "OpenAI",     "input_per_1m": 0.15,   "output_per_1m": 0.60,   "cache_read_multiplier": 0.50,  "cache_write_multiplier": None},
+    "gpt-4-1":          {"name": "GPT-4.1",              "provider": "OpenAI",     "input_per_1m": 2.00,   "output_per_1m": 8.00,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
+    "gpt-4-1-mini":     {"name": "GPT-4.1 Mini",         "provider": "OpenAI",     "input_per_1m": 0.40,   "output_per_1m": 1.60,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
+    "o4-mini":          {"name": "o4-mini",              "provider": "OpenAI",     "input_per_1m": 1.10,   "output_per_1m": 4.40,   "cache_read_multiplier": 0.275, "cache_write_multiplier": None},
+    "o3":               {"name": "o3",                   "provider": "OpenAI",     "input_per_1m": 10.00,  "output_per_1m": 40.00,  "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
+    # Anthropic — cache write = 1.25x input, cache read = 0.10x input
+    "claude-opus-4":    {"name": "Claude Opus 4",        "provider": "Anthropic",  "input_per_1m": 15.00,  "output_per_1m": 75.00,  "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
+    "claude-sonnet-4-5":{"name": "Claude Sonnet 4.5",   "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00,  "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
+    "claude-sonnet-4":  {"name": "Claude Sonnet 4",      "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00,  "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
+    "claude-haiku-3":   {"name": "Claude Haiku 3.5",     "provider": "Anthropic",  "input_per_1m": 0.80,   "output_per_1m": 4.00,   "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
+    # Google — cache read = 0.25x input
+    "gemini-2-5-pro":   {"name": "Gemini 2.5 Pro",       "provider": "Google",     "input_per_1m": 1.25,   "output_per_1m": 10.00,  "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
+    "gemini-2-5-flash": {"name": "Gemini 2.5 Flash",     "provider": "Google",     "input_per_1m": 0.15,   "output_per_1m": 0.60,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
+    "gemini-2-flash":   {"name": "Gemini 2.0 Flash",     "provider": "Google",     "input_per_1m": 0.075,  "output_per_1m": 0.30,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
+    "gemini-1-5-pro":   {"name": "Gemini 1.5 Pro",       "provider": "Google",     "input_per_1m": 1.25,   "output_per_1m": 5.00,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
     # DeepSeek
-    "deepseek-v3":     {"name": "DeepSeek V3",          "provider": "DeepSeek",   "input_per_1m": 0.27,   "output_per_1m": 1.10},
-    "deepseek-r1":     {"name": "DeepSeek R1",          "provider": "DeepSeek",   "input_per_1m": 0.55,   "output_per_1m": 2.19},
+    "deepseek-v3-0324": {"name": "DeepSeek V3 0324",     "provider": "DeepSeek",   "input_per_1m": 0.27,   "output_per_1m": 1.10,   "cache_read_multiplier": 0.07,  "cache_write_multiplier": None},
+    "deepseek-v3":      {"name": "DeepSeek V3",          "provider": "DeepSeek",   "input_per_1m": 0.27,   "output_per_1m": 1.10,   "cache_read_multiplier": 0.07,  "cache_write_multiplier": None},
+    "deepseek-r1":      {"name": "DeepSeek R1",          "provider": "DeepSeek",   "input_per_1m": 0.55,   "output_per_1m": 2.19,   "cache_read_multiplier": 0.14,  "cache_write_multiplier": None},
     # Others
-    "llama-3-3-70b":   {"name": "Llama 3.3 70B",        "provider": "Meta/OR",    "input_per_1m": 0.59,   "output_per_1m": 0.79},
-    "mistral-large":   {"name": "Mistral Large 2",      "provider": "Mistral",    "input_per_1m": 2.00,   "output_per_1m": 6.00},
-    "qwen3-235b":      {"name": "Qwen3 235B",           "provider": "Alibaba",    "input_per_1m": 0.50,   "output_per_1m": 1.50},
-    "nova-pro":        {"name": "Amazon Nova Pro",      "provider": "AWS",        "input_per_1m": 0.80,   "output_per_1m": 3.20},
+    "llama-3-3-70b":    {"name": "Llama 3.3 70B",        "provider": "Meta/OR",    "input_per_1m": 0.59,   "output_per_1m": 0.79,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "mistral-large":    {"name": "Mistral Large 2",      "provider": "Mistral",    "input_per_1m": 2.00,   "output_per_1m": 6.00,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "qwen3-235b":       {"name": "Qwen3 235B",           "provider": "Alibaba",    "input_per_1m": 0.50,   "output_per_1m": 1.50,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "nova-pro":         {"name": "Amazon Nova Pro",      "provider": "AWS",        "input_per_1m": 0.80,   "output_per_1m": 3.20,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
 }
 
 class AnalyzeRequest(BaseModel):
     prompt_tokens: int
     completion_tokens: int
     model: str
+    cache_read_tokens: Optional[int] = 0
+    cache_write_tokens: Optional[int] = 0
     raw_response: Optional[str] = None
 
 class ParseRequest(BaseModel):
@@ -61,22 +67,24 @@ async def get_models():
     return {"models": models}
 
 # Maps common model name substrings (from API responses) to token-lens model IDs
+# Order matters — more specific keys must come before shorter ones
 MODEL_NAME_MAP = {
     "gpt-4o-mini": "gpt-4o-mini",
-    "gpt-4o": "gpt-4o",
-    "gpt-4.1-mini": "gpt-4-mini",
+    "gpt-4.1-mini": "gpt-4-1-mini",
     "gpt-4.1": "gpt-4-1",
+    "gpt-4o": "gpt-4o",
     "o4-mini": "o4-mini",
     "o3": "o3",
     "claude-opus-4": "claude-opus-4",
+    "claude-sonnet-4-5": "claude-sonnet-4-5",
+    "claude-sonnet-4": "claude-sonnet-4",
     "claude-3-5-haiku": "claude-haiku-3",
     "claude-haiku": "claude-haiku-3",
-    "claude-sonnet-4": "claude-sonnet-4",
-    "claude-sonnet": "claude-sonnet-4",
-    "gemini-2.5-pro":  "gemini-2-5-pro",
+    "gemini-2.5-pro": "gemini-2-5-pro",
     "gemini-2.5-flash": "gemini-2-5-flash",
     "gemini-2.0-flash": "gemini-2-flash",
     "gemini-1.5-pro": "gemini-1-5-pro",
+    "deepseek-v3-0324": "deepseek-v3-0324",
     "deepseek-r1": "deepseek-r1",
     "deepseek-v3": "deepseek-v3",
     "llama-3.3-70b": "llama-3-3-70b",
@@ -114,6 +122,15 @@ async def parse_response(request: ParseRequest):
             or 0
         )
 
+        # Cache tokens — OpenAI: prompt_tokens_details.cached_tokens
+        # Anthropic: cache_read_input_tokens / cache_creation_input_tokens
+        cache_read_tokens = (
+            (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
+            or usage.get("cache_read_input_tokens")
+            or 0
+        )
+        cache_write_tokens = usage.get("cache_creation_input_tokens") or 0
+
         # Extract model from response JSON if present
         raw_model = data.get("model")
         resolved_model = _resolve_model(raw_model)
@@ -121,6 +138,8 @@ async def parse_response(request: ParseRequest):
         return {
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
+            "cache_read_tokens": cache_read_tokens,
+            "cache_write_tokens": cache_write_tokens,
             "model": resolved_model,
             "raw_model": raw_model,
             "found": prompt_tokens > 0 or completion_tokens > 0
@@ -136,13 +155,34 @@ async def analyze(request: AnalyzeRequest):
     pricing = MODEL_PRICING[request.model]
     input_cost = (request.prompt_tokens / 1_000_000) * pricing["input_per_1m"]
     output_cost = (request.completion_tokens / 1_000_000) * pricing["output_per_1m"]
-    total_cost = input_cost + output_cost
+
+    # Cache costs
+    cache_read_cost = 0.0
+    cache_write_cost = 0.0
+    cache_read_tokens = request.cache_read_tokens or 0
+    cache_write_tokens = request.cache_write_tokens or 0
+    if cache_read_tokens and pricing.get("cache_read_multiplier") is not None:
+        cache_read_cost = (cache_read_tokens / 1_000_000) * pricing["input_per_1m"] * pricing["cache_read_multiplier"]
+    if cache_write_tokens:
+        write_mult = pricing.get("cache_write_multiplier") or 1.0
+        cache_write_cost = (cache_write_tokens / 1_000_000) * pricing["input_per_1m"] * write_mult
+
+    total_cost = input_cost + output_cost + cache_read_cost + cache_write_cost
 
     comparison = []
     for model_id, model_pricing in MODEL_PRICING.items():
         model_input_cost = (request.prompt_tokens / 1_000_000) * model_pricing["input_per_1m"]
         model_output_cost = (request.completion_tokens / 1_000_000) * model_pricing["output_per_1m"]
-        model_total_cost = model_input_cost + model_output_cost
+
+        m_cache_read_cost = 0.0
+        m_cache_write_cost = 0.0
+        if cache_read_tokens and model_pricing.get("cache_read_multiplier") is not None:
+            m_cache_read_cost = (cache_read_tokens / 1_000_000) * model_pricing["input_per_1m"] * model_pricing["cache_read_multiplier"]
+        if cache_write_tokens:
+            w_mult = model_pricing.get("cache_write_multiplier") or 1.0
+            m_cache_write_cost = (cache_write_tokens / 1_000_000) * model_pricing["input_per_1m"] * w_mult
+
+        model_total_cost = model_input_cost + model_output_cost + m_cache_read_cost + m_cache_write_cost
 
         if total_cost > 0:
             cheaper_by_pct = round(((total_cost - model_total_cost) / total_cost) * 100)
@@ -158,6 +198,8 @@ async def analyze(request: AnalyzeRequest):
             "provider": model_pricing["provider"],
             "prompt_cost_usd": round(model_input_cost, 6),
             "completion_cost_usd": round(model_output_cost, 6),
+            "cache_read_cost_usd": round(m_cache_read_cost, 6),
+            "cache_write_cost_usd": round(m_cache_write_cost, 6),
             "total_cost_usd": round(model_total_cost, 6),
             "cheaper_by_pct": cheaper_by_pct,
             "tokens_per_dollar": tokens_per_dollar
@@ -181,12 +223,16 @@ async def analyze(request: AnalyzeRequest):
         "input": {
             "prompt_tokens": request.prompt_tokens,
             "completion_tokens": request.completion_tokens,
+            "cache_read_tokens": cache_read_tokens,
+            "cache_write_tokens": cache_write_tokens,
         },
         "current_model": {
             "name": pricing["name"],
             "cost_usd": round(total_cost, 6),
             "prompt_cost_usd": round(input_cost, 6),
             "completion_cost_usd": round(output_cost, 6),
+            "cache_read_cost_usd": round(cache_read_cost, 6),
+            "cache_write_cost_usd": round(cache_write_cost, 6),
         },
         "comparison": comparison,
         "cheapest": cheapest,
