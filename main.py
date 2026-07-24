@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import json
 import math
-from typing import Optional
+from typing import Optional, Any
 
 app = FastAPI()
 
@@ -20,6 +20,7 @@ MODEL_PRICING = {
     "claude-sonnet-4": {"name": "Claude Sonnet 4",      "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00},
     "claude-haiku-3":  {"name": "Claude Haiku 3.5",     "provider": "Anthropic",  "input_per_1m": 0.80,   "output_per_1m": 4.00},
     # Google
+    "gemini-2-5-pro":  {"name": "Gemini 2.5 Pro",       "provider": "Google",     "input_per_1m": 1.25,   "output_per_1m": 10.00},
     "gemini-2-5-flash":{"name": "Gemini 2.5 Flash",     "provider": "Google",     "input_per_1m": 0.15,   "output_per_1m": 0.60},
     "gemini-2-flash":  {"name": "Gemini 2.0 Flash",     "provider": "Google",     "input_per_1m": 0.075,  "output_per_1m": 0.30},
     "gemini-1-5-pro":  {"name": "Gemini 1.5 Pro",       "provider": "Google",     "input_per_1m": 1.25,   "output_per_1m": 5.00},
@@ -72,6 +73,7 @@ MODEL_NAME_MAP = {
     "claude-haiku": "claude-haiku-3",
     "claude-sonnet-4": "claude-sonnet-4",
     "claude-sonnet": "claude-sonnet-4",
+    "gemini-2.5-pro":  "gemini-2-5-pro",
     "gemini-2.5-flash": "gemini-2-5-flash",
     "gemini-2.0-flash": "gemini-2-flash",
     "gemini-1.5-pro": "gemini-1-5-pro",
@@ -192,8 +194,13 @@ async def analyze(request: AnalyzeRequest):
         "monthly_projection": monthly_projection,
     }
 
+class ExplainRequest(BaseModel):
+    current_model: dict
+    cheapest: str
+    savings_vs_current: str
+
 @app.post("/explain")
-async def explain_cost(analysis: dict):
+async def explain_cost(analysis: ExplainRequest):
     try:
         from keys.api_keys import NVIDIA_NIM_KEY
     except ImportError:
@@ -203,10 +210,10 @@ async def explain_cost(analysis: dict):
 
     prompt = f"""Summarize this token cost analysis in 2 sentences, plain English.
 
-Current model: {analysis['current_model']['name']}
-Current cost: ${analysis['current_model']['cost_usd']}
-Cheapest alternative: {analysis['cheapest']}
-Savings: {analysis['savings_vs_current']}
+Current model: {analysis.current_model.get('name', 'unknown')}
+Current cost: ${analysis.current_model.get('cost_usd', 0)}
+Cheapest alternative: {analysis.cheapest}
+Savings: {analysis.savings_vs_current}
 
 Keep it simple and actionable."""
 
