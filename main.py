@@ -50,17 +50,64 @@ async def get_models():
         })
     return {"models": models}
 
+# Maps common model name substrings (from API responses) to token-lens model IDs
+MODEL_NAME_MAP = {
+    "gpt-4o-mini": "gpt-4o-mini",
+    "gpt-4o": "gpt-4o",
+    "gpt-4.1-mini": "gpt-4-mini",
+    "gpt-4.1": "gpt-4-1",
+    "claude-3-5-haiku": "claude-haiku-3",
+    "claude-haiku": "claude-haiku-3",
+    "claude-sonnet-4": "claude-sonnet-4",
+    "claude-sonnet": "claude-sonnet-4",
+    "gemini-2.0-flash": "gemini-2-flash",
+    "gemini-1.5-pro": "gemini-1-5-pro",
+    "deepseek-r1": "deepseek-r1",
+    "deepseek-v3": "deepseek-v3",
+    "llama-3.3-70b": "llama-3-3-70b",
+    "mistral-large": "mistral-large",
+    "qwen3-235b": "qwen3-235b",
+    "nova-pro": "nova-pro",
+}
+
+def _resolve_model(raw_model: Optional[str]) -> str:
+    """Map a raw model string from an API response to a token-lens model ID."""
+    if not raw_model:
+        return "gpt-4o"
+    lower = raw_model.lower()
+    for key, model_id in MODEL_NAME_MAP.items():
+        if key in lower:
+            return model_id
+    return "gpt-4o"
+
 @app.post("/parse-response")
 async def parse_response(request: ParseRequest):
     try:
         data = json.loads(request.raw_json)
         usage = data.get("usage", {})
-        prompt_tokens = usage.get("prompt_tokens", 0)
-        completion_tokens = usage.get("completion_tokens", 0)
+
+        # OpenAI format: prompt_tokens / completion_tokens
+        # Anthropic format: input_tokens / output_tokens
+        prompt_tokens = (
+            usage.get("prompt_tokens")
+            or usage.get("input_tokens")
+            or 0
+        )
+        completion_tokens = (
+            usage.get("completion_tokens")
+            or usage.get("output_tokens")
+            or 0
+        )
+
+        # Extract model from response JSON if present
+        raw_model = data.get("model")
+        resolved_model = _resolve_model(raw_model)
+
         return {
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "model": "gpt-4o",
+            "model": resolved_model,
+            "raw_model": raw_model,
             "found": prompt_tokens > 0 or completion_tokens > 0
         }
     except (json.JSONDecodeError, KeyError):
