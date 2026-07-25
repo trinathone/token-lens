@@ -48,9 +48,17 @@ MODEL_PRICING = {
     # OpenAI reasoning
     "o1":                    {"name": "o1",                         "provider": "OpenAI",     "input_per_1m": 15.00,  "output_per_1m": 60.00,  "cache_read_multiplier": 0.50,  "cache_write_multiplier": None},
     "o1-mini":               {"name": "o1-mini",                    "provider": "OpenAI",     "input_per_1m": 1.10,   "output_per_1m": 4.40,   "cache_read_multiplier": 0.50,  "cache_write_multiplier": None},
+    "o3-mini":               {"name": "o3-mini",                    "provider": "OpenAI",     "input_per_1m": 1.10,   "output_per_1m": 4.40,   "cache_read_multiplier": 0.55,  "cache_write_multiplier": None},
+    # OpenAI GPT-4.5
+    "gpt-4-5":               {"name": "GPT-4.5",                    "provider": "OpenAI",     "input_per_1m": 75.00,  "output_per_1m": 150.00, "cache_read_multiplier": 0.50,  "cache_write_multiplier": None},
     # xAI Grok
     "grok-3":                {"name": "Grok 3",                     "provider": "xAI",        "input_per_1m": 3.00,   "output_per_1m": 15.00,  "cache_read_multiplier": None,  "cache_write_multiplier": None},
     "grok-3-mini":           {"name": "Grok 3 Mini",                "provider": "xAI",        "input_per_1m": 0.30,   "output_per_1m": 0.50,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "grok-2":                {"name": "Grok 2",                     "provider": "xAI",        "input_per_1m": 2.00,   "output_per_1m": 10.00,  "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    # DeepSeek updated
+    "deepseek-r1-0528":      {"name": "DeepSeek R1 0528",           "provider": "DeepSeek",   "input_per_1m": 0.55,   "output_per_1m": 2.19,   "cache_read_multiplier": 0.14,  "cache_write_multiplier": None},
+    # Anthropic Claude 3.5 Sonnet (classic)
+    "claude-3-5-sonnet":     {"name": "Claude 3.5 Sonnet",          "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00,  "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
 }
 
 class AnalyzeRequest(BaseModel):
@@ -120,9 +128,19 @@ MODEL_NAME_MAP = {
     # xAI Grok
     "grok-3-mini": "grok-3-mini",
     "grok-3": "grok-3",
-    # OpenAI o1
+    "grok-2": "grok-2",
+    # OpenAI o1/o3
+    "o3-mini": "o3-mini",
     "o1-mini": "o1-mini",
     "o1": "o1",
+    # OpenAI GPT-4.5
+    "gpt-4.5": "gpt-4-5",
+    "gpt-4-5": "gpt-4-5",
+    # DeepSeek updated
+    "deepseek-r1-0528": "deepseek-r1-0528",
+    # Anthropic Claude 3.5 Sonnet classic
+    "claude-3-5-sonnet": "claude-3-5-sonnet",
+    "claude-3.5-sonnet": "claude-3-5-sonnet",
 }
 
 def _resolve_model(raw_model: Optional[str]) -> str:
@@ -426,5 +444,34 @@ Keep it simple and actionable."""
         data = response.json()
         summary = data["choices"][0]["message"]["content"]
         return {"summary": summary}
+
+@app.get("/cheapest")
+async def cheapest_models(
+    prompt_tokens: int = 1000,
+    completion_tokens: int = 500,
+    top_n: int = 5,
+):
+    """Return the top N cheapest models for a given token count (defaults: 1K prompt, 500 completion, top 5)."""
+    results = []
+    for model_id, pricing in MODEL_PRICING.items():
+        cost = (
+            (prompt_tokens / 1_000_000) * pricing["input_per_1m"]
+            + (completion_tokens / 1_000_000) * pricing["output_per_1m"]
+        )
+        results.append({
+            "model": model_id,
+            "name": pricing["name"],
+            "provider": pricing["provider"],
+            "cost_usd": round(cost, 8),
+            "input_per_1m": pricing["input_per_1m"],
+            "output_per_1m": pricing["output_per_1m"],
+        })
+    results.sort(key=lambda x: x["cost_usd"])
+    return {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "top_n": top_n,
+        "cheapest": results[:top_n],
+    }
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
