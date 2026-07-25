@@ -74,13 +74,16 @@ async def get_models():
 # Maps common model name substrings (from API responses) to token-lens model IDs
 # Order matters — more specific keys must come before shorter ones
 MODEL_NAME_MAP = {
+    # More specific keys MUST precede shorter prefixes they'd shadow
     "gpt-4o-mini": "gpt-4o-mini",
+    "gpt-4.1-nano": "gpt-4-1-nano",
     "gpt-4.1-mini": "gpt-4-1-mini",
     "gpt-4.1": "gpt-4-1",
     "gpt-4o": "gpt-4o",
     "o4-mini": "o4-mini",
     "o3": "o3",
     "claude-opus-4": "claude-opus-4",
+    "claude-sonnet-4-6": "claude-sonnet-4-6",
     "claude-sonnet-4-5": "claude-sonnet-4-5",
     "claude-sonnet-4": "claude-sonnet-4",
     "claude-3-5-haiku": "claude-haiku-3",
@@ -92,14 +95,12 @@ MODEL_NAME_MAP = {
     "deepseek-v3-0324": "deepseek-v3-0324",
     "deepseek-r1": "deepseek-r1",
     "deepseek-v3": "deepseek-v3",
+    "llama-4-maverick": "llama-4-maverick",
+    "llama-4-scout": "llama-4-scout",
     "llama-3.3-70b": "llama-3-3-70b",
     "mistral-large": "mistral-large",
     "qwen3-235b": "qwen3-235b",
     "nova-pro": "nova-pro",
-    "gpt-4.1-nano": "gpt-4-1-nano",
-    "claude-sonnet-4-6": "claude-sonnet-4-6",
-    "llama-4-scout": "llama-4-scout",
-    "llama-4-maverick": "llama-4-maverick",
 }
 
 def _resolve_model(raw_model: Optional[str]) -> str:
