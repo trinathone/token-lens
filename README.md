@@ -1,3 +1,15 @@
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=TOKEN-LENS&fontSize=42&fontColor=fff&animation=twinkling&fontAlignY=32&desc=Paste%20any%20LLM%20response%20→%20see%20exact%20token%20cost%20across%2015%20models&descAlignY=55&descSize=14"/>
+
+[![Live Demo](https://img.shields.io/badge/▶_Live_Demo-Visit_Now-6366f1?style=for-the-badge&logoColor=white)](https://token-lens-three.vercel.app)
+[![GitHub Stars](https://img.shields.io/github/stars/trinathone/token-lens?style=for-the-badge&color=f59e0b)](https://github.com/trinathone/token-lens)
+[![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
+
+</div>
+
+---
+
 # token-lens
 
 Ever finish a feature, look at your OpenAI bill, and have no idea which API call ate $40?
