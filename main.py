@@ -240,6 +240,102 @@ async def analyze(request: AnalyzeRequest):
         "monthly_projection": monthly_projection,
     }
 
+class BatchItem(BaseModel):
+    prompt_tokens: int
+    completion_tokens: int
+    model: str
+    cache_read_tokens: Optional[int] = 0
+    cache_write_tokens: Optional[int] = 0
+    label: Optional[str] = None  # optional tag e.g. "summarize-call", "classify-call"
+
+class BatchRequest(BaseModel):
+    calls: list[BatchItem]
+
+@app.post("/batch")
+async def batch_analyze(request: BatchRequest):
+    """Analyze multiple LLM calls at once. Returns per-call breakdown + aggregate totals."""
+    if not request.calls:
+        raise HTTPException(status_code=400, detail="No calls provided")
+    if len(request.calls) > 500:
+        raise HTTPException(status_code=400, detail="Max 500 calls per batch")
+
+    results = []
+    aggregate_total_usd = 0.0
+    aggregate_prompt_tokens = 0
+    aggregate_completion_tokens = 0
+    per_model_spend: dict[str, float] = {}
+
+    for i, call in enumerate(request.calls):
+        if call.model not in MODEL_PRICING:
+            raise HTTPException(status_code=400, detail=f"Call {i}: model '{call.model}' not found")
+
+        pricing = MODEL_PRICING[call.model]
+        input_cost = (call.prompt_tokens / 1_000_000) * pricing["input_per_1m"]
+        output_cost = (call.completion_tokens / 1_000_000) * pricing["output_per_1m"]
+
+        cache_read_tokens = call.cache_read_tokens or 0
+        cache_write_tokens = call.cache_write_tokens or 0
+        cache_read_cost = 0.0
+        cache_write_cost = 0.0
+        if cache_read_tokens and pricing.get("cache_read_multiplier") is not None:
+            cache_read_cost = (cache_read_tokens / 1_000_000) * pricing["input_per_1m"] * pricing["cache_read_multiplier"]
+        if cache_write_tokens:
+            write_mult = pricing.get("cache_write_multiplier") or 1.0
+            cache_write_cost = (cache_write_tokens / 1_000_000) * pricing["input_per_1m"] * write_mult
+
+        call_total = input_cost + output_cost + cache_read_cost + cache_write_cost
+
+        results.append({
+            "index": i,
+            "label": call.label or f"call_{i}",
+            "model": call.model,
+            "model_name": pricing["name"],
+            "prompt_tokens": call.prompt_tokens,
+            "completion_tokens": call.completion_tokens,
+            "cache_read_tokens": cache_read_tokens,
+            "cache_write_tokens": cache_write_tokens,
+            "cost_usd": round(call_total, 6),
+        })
+
+        aggregate_total_usd += call_total
+        aggregate_prompt_tokens += call.prompt_tokens
+        aggregate_completion_tokens += call.completion_tokens
+        per_model_spend[call.model] = per_model_spend.get(call.model, 0.0) + call_total
+
+    # Sort per-model spend descending so biggest spenders surface first
+    sorted_model_spend = sorted(
+        [{"model": k, "name": MODEL_PRICING[k]["name"], "total_usd": round(v, 6)} for k, v in per_model_spend.items()],
+        key=lambda x: x["total_usd"],
+        reverse=True,
+    )
+
+    # What would this batch cost on the cheapest available model?
+    # Use gemini-2-flash as reference (cheapest in pricing table)
+    cheapest_model_id = min(MODEL_PRICING, key=lambda m: MODEL_PRICING[m]["input_per_1m"] + MODEL_PRICING[m]["output_per_1m"])
+    cheapest_pricing = MODEL_PRICING[cheapest_model_id]
+    cheapest_batch_cost = (
+        (aggregate_prompt_tokens / 1_000_000) * cheapest_pricing["input_per_1m"]
+        + (aggregate_completion_tokens / 1_000_000) * cheapest_pricing["output_per_1m"]
+    )
+    potential_savings_usd = round(aggregate_total_usd - cheapest_batch_cost, 6)
+    potential_savings_pct = round((potential_savings_usd / aggregate_total_usd) * 100) if aggregate_total_usd > 0 else 0
+
+    return {
+        "calls": results,
+        "aggregate": {
+            "total_calls": len(results),
+            "total_cost_usd": round(aggregate_total_usd, 6),
+            "total_prompt_tokens": aggregate_prompt_tokens,
+            "total_completion_tokens": aggregate_completion_tokens,
+            "per_model_spend": sorted_model_spend,
+            "potential_savings_usd": potential_savings_usd,
+            "potential_savings_pct": f"{potential_savings_pct}%",
+            "cheapest_alternative_model": cheapest_model_id,
+            "cheapest_alternative_name": cheapest_pricing["name"],
+        },
+    }
+
+
 class ExplainRequest(BaseModel):
     current_model: dict
     cheapest: str
