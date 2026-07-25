@@ -36,6 +36,11 @@ MODEL_PRICING = {
     "mistral-large":    {"name": "Mistral Large 2",      "provider": "Mistral",    "input_per_1m": 2.00,   "output_per_1m": 6.00,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
     "qwen3-235b":       {"name": "Qwen3 235B",           "provider": "Alibaba",    "input_per_1m": 0.50,   "output_per_1m": 1.50,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
     "nova-pro":         {"name": "Amazon Nova Pro",      "provider": "AWS",        "input_per_1m": 0.80,   "output_per_1m": 3.20,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    # New 2025 models
+    "gpt-4-1-nano":     {"name": "GPT-4.1 Nano",         "provider": "OpenAI",     "input_per_1m": 0.10,   "output_per_1m": 0.40,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
+    "claude-sonnet-4-6":{"name": "Claude Sonnet 4.6",    "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00,  "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
+    "llama-4-scout":    {"name": "Llama 4 Scout",         "provider": "Meta/OR",    "input_per_1m": 0.11,   "output_per_1m": 0.34,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "llama-4-maverick": {"name": "Llama 4 Maverick",      "provider": "Meta/OR",    "input_per_1m": 0.50,   "output_per_1m": 0.77,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
 }
 
 class AnalyzeRequest(BaseModel):
@@ -91,6 +96,10 @@ MODEL_NAME_MAP = {
     "mistral-large": "mistral-large",
     "qwen3-235b": "qwen3-235b",
     "nova-pro": "nova-pro",
+    "gpt-4.1-nano": "gpt-4-1-nano",
+    "claude-sonnet-4-6": "claude-sonnet-4-6",
+    "llama-4-scout": "llama-4-scout",
+    "llama-4-maverick": "llama-4-maverick",
 }
 
 def _resolve_model(raw_model: Optional[str]) -> str:
