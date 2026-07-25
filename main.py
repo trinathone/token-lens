@@ -99,6 +99,7 @@ MODEL_NAME_MAP = {
     "gpt-4.1": "gpt-4-1",
     "gpt-4o": "gpt-4o",
     "o4-mini": "o4-mini",
+    "o3-mini": "o3-mini",  # must precede "o3"
     "o3": "o3",
     "claude-opus-4-5": "claude-opus-4-5",
     "claude-opus-4": "claude-opus-4",
@@ -115,6 +116,7 @@ MODEL_NAME_MAP = {
     "gemini-2.0-flash": "gemini-2-flash",
     "gemini-1.5-pro": "gemini-1-5-pro",
     "deepseek-v3-0324": "deepseek-v3-0324",
+    "deepseek-r1-0528": "deepseek-r1-0528",  # must precede "deepseek-r1"
     "deepseek-r1": "deepseek-r1",
     "deepseek-v3": "deepseek-v3",
     "llama-4-maverick": "llama-4-maverick",
@@ -129,15 +131,12 @@ MODEL_NAME_MAP = {
     "grok-3-mini": "grok-3-mini",
     "grok-3": "grok-3",
     "grok-2": "grok-2",
-    # OpenAI o1/o3
-    "o3-mini": "o3-mini",
+    # OpenAI o1 — more specific BEFORE shorter keys
     "o1-mini": "o1-mini",
     "o1": "o1",
     # OpenAI GPT-4.5
     "gpt-4.5": "gpt-4-5",
     "gpt-4-5": "gpt-4-5",
-    # DeepSeek updated
-    "deepseek-r1-0528": "deepseek-r1-0528",
     # Anthropic Claude 3.5 Sonnet classic
     "claude-3-5-sonnet": "claude-3-5-sonnet",
     "claude-3.5-sonnet": "claude-3-5-sonnet",
