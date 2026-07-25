@@ -610,4 +610,60 @@ async def compare_models(request: CompareRequest):
     return result
 
 
+@app.get("/providers")
+async def list_providers(
+    prompt_tokens: int = 1000,
+    completion_tokens: int = 500,
+):
+    """Group all models by provider. For each provider, returns model count,
+    cheapest model, most expensive model, and price range for a given token count.
+
+    Example: /providers?prompt_tokens=2000&completion_tokens=800
+    """
+    if prompt_tokens <= 0 or completion_tokens <= 0:
+        raise HTTPException(status_code=400, detail="token counts must be > 0")
+
+    providers: dict[str, list[dict]] = {}
+    for model_id, pricing in MODEL_PRICING.items():
+        provider = pricing["provider"]
+        cost = (
+            (prompt_tokens / 1_000_000) * pricing["input_per_1m"]
+            + (completion_tokens / 1_000_000) * pricing["output_per_1m"]
+        )
+        entry = {
+            "model": model_id,
+            "name": pricing["name"],
+            "cost_usd": round(cost, 8),
+            "input_per_1m": pricing["input_per_1m"],
+            "output_per_1m": pricing["output_per_1m"],
+        }
+        providers.setdefault(provider, []).append(entry)
+
+    result = []
+    for provider, models in sorted(providers.items()):
+        models_sorted = sorted(models, key=lambda x: x["cost_usd"])
+        cheapest = models_sorted[0]
+        most_expensive = models_sorted[-1]
+        result.append({
+            "provider": provider,
+            "model_count": len(models),
+            "cheapest_model": cheapest["model"],
+            "cheapest_model_name": cheapest["name"],
+            "cheapest_cost_usd": cheapest["cost_usd"],
+            "most_expensive_model": most_expensive["model"],
+            "most_expensive_model_name": most_expensive["name"],
+            "most_expensive_cost_usd": most_expensive["cost_usd"],
+            "models": models_sorted,
+        })
+
+    # Sort providers by cheapest model cost ascending
+    result.sort(key=lambda x: x["cheapest_cost_usd"])
+
+    return {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "providers": result,
+    }
+
+
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
