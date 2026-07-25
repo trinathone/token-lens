@@ -522,4 +522,92 @@ async def budget_planner(
     }
 
 
+class CompareRequest(BaseModel):
+    model_a: str
+    model_b: str
+    prompt_tokens: int
+    completion_tokens: int
+    cache_read_tokens: Optional[int] = 0
+    cache_write_tokens: Optional[int] = 0
+    calls_per_month: Optional[int] = None  # optional: project monthly cost
+
+
+@app.post("/compare")
+async def compare_models(request: CompareRequest):
+    """Directly compare two models side-by-side for given token counts.
+
+    Returns per-call costs for both, the winner (cheaper model), percentage
+    and absolute savings, and an optional monthly projection.
+    """
+    for model_id in (request.model_a, request.model_b):
+        if model_id not in MODEL_PRICING:
+            raise HTTPException(status_code=400, detail=f"Model '{model_id}' not found")
+
+    if request.prompt_tokens <= 0 or request.completion_tokens <= 0:
+        raise HTTPException(status_code=400, detail="token counts must be > 0")
+
+    cache_read_tokens = request.cache_read_tokens or 0
+    cache_write_tokens = request.cache_write_tokens or 0
+
+    def _calc_cost(model_id: str) -> dict:
+        pricing = MODEL_PRICING[model_id]
+        input_cost = (request.prompt_tokens / 1_000_000) * pricing["input_per_1m"]
+        output_cost = (request.completion_tokens / 1_000_000) * pricing["output_per_1m"]
+        cr_cost = 0.0
+        cw_cost = 0.0
+        if cache_read_tokens and pricing.get("cache_read_multiplier") is not None:
+            cr_cost = (cache_read_tokens / 1_000_000) * pricing["input_per_1m"] * pricing["cache_read_multiplier"]
+        if cache_write_tokens:
+            w_mult = pricing.get("cache_write_multiplier") or 1.0
+            cw_cost = (cache_write_tokens / 1_000_000) * pricing["input_per_1m"] * w_mult
+        total = input_cost + output_cost + cr_cost + cw_cost
+        return {
+            "model": model_id,
+            "name": pricing["name"],
+            "provider": pricing["provider"],
+            "input_cost_usd": round(input_cost, 8),
+            "output_cost_usd": round(output_cost, 8),
+            "cache_read_cost_usd": round(cr_cost, 8),
+            "cache_write_cost_usd": round(cw_cost, 8),
+            "total_cost_usd": round(total, 8),
+        }
+
+    a = _calc_cost(request.model_a)
+    b = _calc_cost(request.model_b)
+
+    cost_a = a["total_cost_usd"]
+    cost_b = b["total_cost_usd"]
+
+    if cost_a <= cost_b:
+        winner = request.model_a
+        loser_cost = cost_b
+        winner_cost = cost_a
+    else:
+        winner = request.model_b
+        loser_cost = cost_a
+        winner_cost = cost_b
+
+    savings_usd = round(loser_cost - winner_cost, 8)
+    savings_pct = round(((loser_cost - winner_cost) / loser_cost) * 100, 1) if loser_cost > 0 else 0.0
+
+    result: dict[str, Any] = {
+        "model_a": a,
+        "model_b": b,
+        "winner": winner,
+        "winner_name": MODEL_PRICING[winner]["name"],
+        "savings_usd_per_call": savings_usd,
+        "savings_pct": f"{savings_pct}%",
+    }
+
+    if request.calls_per_month is not None and request.calls_per_month > 0:
+        result["monthly_projection"] = {
+            "calls_per_month": request.calls_per_month,
+            "model_a_monthly_usd": round(cost_a * request.calls_per_month, 4),
+            "model_b_monthly_usd": round(cost_b * request.calls_per_month, 4),
+            "monthly_savings_usd": round(savings_usd * request.calls_per_month, 4),
+        }
+
+    return result
+
+
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
