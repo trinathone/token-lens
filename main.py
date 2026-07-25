@@ -37,10 +37,12 @@ MODEL_PRICING = {
     "qwen3-235b":       {"name": "Qwen3 235B",           "provider": "Alibaba",    "input_per_1m": 0.50,   "output_per_1m": 1.50,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
     "nova-pro":         {"name": "Amazon Nova Pro",      "provider": "AWS",        "input_per_1m": 0.80,   "output_per_1m": 3.20,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
     # New 2025 models
-    "gpt-4-1-nano":     {"name": "GPT-4.1 Nano",         "provider": "OpenAI",     "input_per_1m": 0.10,   "output_per_1m": 0.40,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
-    "claude-sonnet-4-6":{"name": "Claude Sonnet 4.6",    "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00,  "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
-    "llama-4-scout":    {"name": "Llama 4 Scout",         "provider": "Meta/OR",    "input_per_1m": 0.11,   "output_per_1m": 0.34,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
-    "llama-4-maverick": {"name": "Llama 4 Maverick",      "provider": "Meta/OR",    "input_per_1m": 0.50,   "output_per_1m": 0.77,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "gpt-4-1-nano":          {"name": "GPT-4.1 Nano",              "provider": "OpenAI",     "input_per_1m": 0.10,   "output_per_1m": 0.40,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
+    "claude-sonnet-4-6":     {"name": "Claude Sonnet 4.6",         "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00,  "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
+    "claude-opus-4-5":       {"name": "Claude Opus 4.5",           "provider": "Anthropic",  "input_per_1m": 15.00,  "output_per_1m": 75.00,  "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
+    "llama-4-scout":         {"name": "Llama 4 Scout",             "provider": "Meta/OR",    "input_per_1m": 0.11,   "output_per_1m": 0.34,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "llama-4-maverick":      {"name": "Llama 4 Maverick",          "provider": "Meta/OR",    "input_per_1m": 0.50,   "output_per_1m": 0.77,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "gemini-2-5-flash-lite": {"name": "Gemini 2.5 Flash-Lite",     "provider": "Google",     "input_per_1m": 0.10,   "output_per_1m": 0.40,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
 }
 
 class AnalyzeRequest(BaseModel):
@@ -82,12 +84,16 @@ MODEL_NAME_MAP = {
     "gpt-4o": "gpt-4o",
     "o4-mini": "o4-mini",
     "o3": "o3",
+    "claude-opus-4-5": "claude-opus-4-5",
     "claude-opus-4": "claude-opus-4",
     "claude-sonnet-4-6": "claude-sonnet-4-6",
+    "claude-sonnet-4.6": "claude-sonnet-4-6",  # Bedrock variant
     "claude-sonnet-4-5": "claude-sonnet-4-5",
+    "claude-sonnet-4.5": "claude-sonnet-4-5",  # Bedrock variant
     "claude-sonnet-4": "claude-sonnet-4",
     "claude-3-5-haiku": "claude-haiku-3",
     "claude-haiku": "claude-haiku-3",
+    "gemini-2.5-flash-lite": "gemini-2-5-flash-lite",
     "gemini-2.5-pro": "gemini-2-5-pro",
     "gemini-2.5-flash": "gemini-2-5-flash",
     "gemini-2.0-flash": "gemini-2-flash",
@@ -104,10 +110,27 @@ MODEL_NAME_MAP = {
 }
 
 def _resolve_model(raw_model: Optional[str]) -> str:
-    """Map a raw model string from an API response to a token-lens model ID."""
+    """Map a raw model string from an API response to a token-lens model ID.
+
+    Handles:
+    - Standard model names: 'gpt-4o', 'claude-sonnet-4-6'
+    - Bedrock cross-region IDs: 'us.anthropic.claude-sonnet-4-6-20250717-v1:0'
+    - Versioned model IDs: 'claude-3-5-haiku-20241022'
+    """
     if not raw_model:
         return "gpt-4o"
     lower = raw_model.lower()
+    # Strip Bedrock cross-region prefix (us., eu., ap.) and provider namespace
+    # e.g. "us.anthropic.claude-sonnet-4-6-20250717-v1:0" -> "claude-sonnet-4-6-20250717-v1:0"
+    stripped_bedrock = False
+    for prefix in ("us.", "eu.", "ap."):
+        if lower.startswith(prefix):
+            lower = lower[len(prefix):]
+            stripped_bedrock = True
+            break
+    # Only strip provider namespace (e.g. "anthropic.claude-...") when a Bedrock prefix was removed
+    if stripped_bedrock and "." in lower:
+        lower = lower.split(".", 1)[1]
     for key, model_id in MODEL_NAME_MAP.items():
         if key in lower:
             return model_id
