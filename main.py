@@ -49,6 +49,7 @@ MODEL_PRICING = {
     "o1":                    {"name": "o1",                         "provider": "OpenAI",     "input_per_1m": 15.00,  "output_per_1m": 60.00,  "cache_read_multiplier": 0.50,  "cache_write_multiplier": None},
     "o1-mini":               {"name": "o1-mini",                    "provider": "OpenAI",     "input_per_1m": 1.10,   "output_per_1m": 4.40,   "cache_read_multiplier": 0.50,  "cache_write_multiplier": None},
     "o3-mini":               {"name": "o3-mini",                    "provider": "OpenAI",     "input_per_1m": 1.10,   "output_per_1m": 4.40,   "cache_read_multiplier": 0.55,  "cache_write_multiplier": None},
+    "o3-pro":                {"name": "o3-pro",                     "provider": "OpenAI",     "input_per_1m": 20.00,  "output_per_1m": 80.00,  "cache_read_multiplier": 0.50,  "cache_write_multiplier": None},
     # OpenAI GPT-4.5
     "gpt-4-5":               {"name": "GPT-4.5",                    "provider": "OpenAI",     "input_per_1m": 75.00,  "output_per_1m": 150.00, "cache_read_multiplier": 0.50,  "cache_write_multiplier": None},
     # xAI Grok
@@ -100,6 +101,7 @@ MODEL_NAME_MAP = {
     "gpt-4o": "gpt-4o",
     "o4-mini": "o4-mini",
     "o3-mini": "o3-mini",  # must precede "o3"
+    "o3-pro":  "o3-pro",
     "o3": "o3",
     "claude-opus-4-5": "claude-opus-4-5",
     "claude-opus-4": "claude-opus-4",
@@ -472,5 +474,52 @@ async def cheapest_models(
         "top_n": top_n,
         "cheapest": results[:top_n],
     }
+
+@app.get("/budget")
+async def budget_planner(
+    monthly_budget_usd: float = 10.0,
+    prompt_tokens: int = 1000,
+    completion_tokens: int = 500,
+):
+    """Given a monthly budget (USD) and typical call size (tokens), returns how many
+    calls you can afford on each model, ranked by most calls per dollar.
+
+    Example: /budget?monthly_budget_usd=50&prompt_tokens=2000&completion_tokens=800
+    """
+    if monthly_budget_usd <= 0:
+        raise HTTPException(status_code=400, detail="monthly_budget_usd must be > 0")
+    if prompt_tokens <= 0 or completion_tokens <= 0:
+        raise HTTPException(status_code=400, detail="token counts must be > 0")
+
+    results = []
+    for model_id, pricing in MODEL_PRICING.items():
+        cost_per_call = (
+            (prompt_tokens / 1_000_000) * pricing["input_per_1m"]
+            + (completion_tokens / 1_000_000) * pricing["output_per_1m"]
+        )
+        if cost_per_call <= 0:
+            calls_affordable = None
+        else:
+            calls_affordable = int(monthly_budget_usd / cost_per_call)
+
+        results.append({
+            "model": model_id,
+            "name": pricing["name"],
+            "provider": pricing["provider"],
+            "cost_per_call_usd": round(cost_per_call, 8),
+            "calls_affordable": calls_affordable,
+            "input_per_1m": pricing["input_per_1m"],
+            "output_per_1m": pricing["output_per_1m"],
+        })
+
+    results.sort(key=lambda x: (x["calls_affordable"] or 0), reverse=True)
+
+    return {
+        "monthly_budget_usd": monthly_budget_usd,
+        "prompt_tokens_per_call": prompt_tokens,
+        "completion_tokens_per_call": completion_tokens,
+        "models": results,
+    }
+
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
