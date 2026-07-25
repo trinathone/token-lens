@@ -36,6 +36,8 @@ MODEL_PRICING = {
     "mistral-large":    {"name": "Mistral Large 2",      "provider": "Mistral",    "input_per_1m": 2.00,   "output_per_1m": 6.00,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
     "qwen3-235b":       {"name": "Qwen3 235B",           "provider": "Alibaba",    "input_per_1m": 0.50,   "output_per_1m": 1.50,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
     "nova-pro":         {"name": "Amazon Nova Pro",      "provider": "AWS",        "input_per_1m": 0.80,   "output_per_1m": 3.20,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "nova-lite":        {"name": "Amazon Nova Lite",     "provider": "AWS",        "input_per_1m": 0.06,   "output_per_1m": 0.24,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
+    "nova-micro":       {"name": "Amazon Nova Micro",    "provider": "AWS",        "input_per_1m": 0.035,  "output_per_1m": 0.14,   "cache_read_multiplier": None,  "cache_write_multiplier": None},
     # New 2025 models
     "gpt-4-1-nano":          {"name": "GPT-4.1 Nano",              "provider": "OpenAI",     "input_per_1m": 0.10,   "output_per_1m": 0.40,   "cache_read_multiplier": 0.25,  "cache_write_multiplier": None},
     "claude-sonnet-4-6":     {"name": "Claude Sonnet 4.6",         "provider": "Anthropic",  "input_per_1m": 3.00,   "output_per_1m": 15.00,  "cache_read_multiplier": 0.10,  "cache_write_multiplier": 1.25},
@@ -113,6 +115,8 @@ MODEL_NAME_MAP = {
     "mistral-large": "mistral-large",
     "qwen3-235b": "qwen3-235b",
     "nova-pro": "nova-pro",
+    "nova-lite": "nova-lite",
+    "nova-micro": "nova-micro",
     # xAI Grok
     "grok-3-mini": "grok-3-mini",
     "grok-3": "grok-3",
